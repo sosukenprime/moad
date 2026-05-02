@@ -12,7 +12,6 @@ import Fab from './components/Fab.jsx'
 export default function App() {
   const initialized = useStore((s) => s.initialized)
   const init = useStore((s) => s.init)
-  const userName = useStore((s) => s.user.name)
   const layoutEdit = useUI((u) => u.layoutEdit)
   const toggleLayoutEdit = useUI((u) => u.toggleLayoutEdit)
   const openModal = useUI((u) => u.openModal)
@@ -23,13 +22,6 @@ export default function App() {
   useEffect(() => {
     init()
   }, [init])
-
-  // First-time setup: prompt for name once initialized.
-  useEffect(() => {
-    if (initialized && !userName) {
-      openModal('firstTime')
-    }
-  }, [initialized, userName, openModal])
 
   if (!initialized) {
     return (
