@@ -41,7 +41,7 @@ export default function Hero() {
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
           <h1 className="font-heading text-5xl sm:text-6xl text-text leading-[0.95] drop-shadow-[0_0_18px_rgba(245,185,66,0.08)]">
-            {greeting(name || 'Captain')}
+            {greeting(name || 'Ken')}
           </h1>
           <div className="mt-2 num text-[11px] text-text-dim tracking-[0.3em] uppercase">
             {longDate()}
