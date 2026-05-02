@@ -2,7 +2,7 @@
 // Server-side only. Reads ANTHROPIC_API_KEY from process.env.
 // In dev, served by a tiny Vite plugin (see vite.config.js).
 
-const MODEL = 'claude-sonnet-4-20250514'
+const MODEL = 'claude-haiku-4-5-20251001'
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
 
