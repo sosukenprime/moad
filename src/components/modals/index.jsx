@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../../lib/store.js'
 import { useUI } from '../../lib/ui.js'
+import { supabase } from '../../lib/supabase.js'
 import Modal, { ModalInput, ModalLabel, ModalBtn } from './Modal.jsx'
 
 // DateField — a date input you can type into AND click anywhere on to open
@@ -513,6 +514,18 @@ function SettingsModal() {
   const closeModal = useUI((u) => u.closeModal)
   const toast = useUI((u) => u.toast)
   const [name, setNameLocal] = useState(user.name)
+  const [signedInEmail, setSignedInEmail] = useState('')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setSignedInEmail(data?.user?.email || '')
+    })
+  }, [])
+
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    closeModal()
+  }
 
   const exportJson = () => {
     const data = JSON.stringify({
@@ -585,8 +598,19 @@ function SettingsModal() {
         <ModalBtn tone="ghost" onClick={() => { resetLayout(); toast('Layout reset', 'info') }}>Reset Layout</ModalBtn>
         <ModalBtn tone="coral" onClick={() => { if (confirm('Wipe everything? This cannot be undone.')) { resetAll(); toast('All data reset', 'info') } }}>Reset All</ModalBtn>
       </div>
+      {signedInEmail && (
+        <div className="mt-5 pt-4 border-t border-border">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] uppercase tracking-wider text-text-dim font-mono">Signed in as</div>
+              <div className="text-sm text-text truncate">{signedInEmail}</div>
+            </div>
+            <ModalBtn tone="ghost" onClick={signOut}>Sign Out</ModalBtn>
+          </div>
+        </div>
+      )}
       <div className="mt-5 pt-4 border-t border-border text-[11px] text-text-muted num">
-        MOAD v0.0.1 · {user.totalTasksCompleted} total completions
+        MOAD v0.1.0 · {user.totalTasksCompleted} total completions
       </div>
     </Modal>
   )

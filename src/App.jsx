@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from './lib/supabase.js'
 import { useStore } from './lib/store.js'
 import { useUI } from './lib/ui.js'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js'
@@ -8,10 +9,14 @@ import LayoutGrid from './components/LayoutGrid.jsx'
 import ActiveModal from './components/modals/index.jsx'
 import Toasts from './components/Toasts.jsx'
 import Fab from './components/Fab.jsx'
+import SignIn from './components/SignIn.jsx'
 
 export default function App() {
+  const [authLoading, setAuthLoading] = useState(true)
+  const [session, setSession] = useState(null)
   const initialized = useStore((s) => s.initialized)
   const init = useStore((s) => s.init)
+  const teardown = useStore((s) => s.teardown)
   const layoutEdit = useUI((u) => u.layoutEdit)
   const toggleLayoutEdit = useUI((u) => u.toggleLayoutEdit)
   const openModal = useUI((u) => u.openModal)
@@ -19,14 +24,44 @@ export default function App() {
   useKeyboardShortcuts()
   useDateRollover()
 
+  // Auth lifecycle: detect existing session, then react to changes.
   useEffect(() => {
-    init()
-  }, [init])
+    let cancelled = false
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return
+      setSession(session)
+      setAuthLoading(false)
+      if (session) init(session.user.id)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (cancelled) return
+      setSession(newSession)
+      setAuthLoading(false)
+      if (newSession) init(newSession.user.id)
+      else teardown()
+    })
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
+  }, [init, teardown])
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-text-dim font-mono text-sm">
+        Authenticating…
+      </div>
+    )
+  }
+
+  if (!session) {
+    return <SignIn />
+  }
 
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center text-text-dim font-mono text-sm">
-        Booting MOAD…
+        Loading your dashboard…
       </div>
     )
   }

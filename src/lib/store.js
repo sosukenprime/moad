@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { loadState, saveState } from './storage.js'
+import { loadState, saveState, subscribeToState } from './storage.js'
 import { todayISO, isYesterday } from './dates.js'
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
@@ -35,7 +35,6 @@ const defaultState = () => ({
   deadlines: [],
   // Schedule entries pointing at a Mission, Deadline, or Lab item — independent
   // completion (does NOT modify the source). See locked decision #7.
-  // { id, refType: 'mission'|'deadline'|'lab', refId, dateKey, completed, completedAt, addedAt }
   todaySchedule: [],
   layout: defaultLayout,
 })
@@ -55,10 +54,9 @@ function migrate(data) {
   return data
 }
 
-// Slice exclusion: `initialized` is runtime-only, never persisted directly.
+// Slice exclusion: `initialized` is runtime-only, never persisted.
 function persistableSlice(state) {
-  const { initialized: _i, init: _f1, ...rest } = state
-  // strip functions
+  const { initialized: _i, init: _f1, teardown: _f2, _persist: _f3, ...rest } = state
   const out = {}
   for (const [k, v] of Object.entries(rest)) {
     if (typeof v !== 'function') out[k] = v
@@ -66,24 +64,67 @@ function persistableSlice(state) {
   return out
 }
 
+// Module-level globals for the active session — these are NOT persisted; they
+// govern how `_persist()` knows which user to write for and how to suppress
+// echoes from our own Supabase writes.
+let activeUserId = null
+let saveTimer = null
+let unsubscribe = null
+let lastSavedToken = null
+
+const SAVE_DEBOUNCE_MS = 500
+
 export const useStore = create((set, get) => ({
   ...defaultState(),
 
-  init: () => {
-    const loaded = loadState()
-    const data = loaded ? migrate(loaded) : null
-    if (data) {
-      set({ ...defaultState(), ...data, initialized: true })
+  init: async (userId) => {
+    activeUserId = userId
+    const loaded = await loadState(userId)
+    if (loaded) {
+      set({ ...defaultState(), ...migrate(loaded), initialized: true })
     } else {
+      // First sign-in for this user — start with defaults; first action
+      // will trigger an upsert.
       set({ ...defaultState(), initialized: true })
     }
-    // bump daily-use streak if user has completed something today (handled on completions)
+
+    // Subscribe to remote changes. Filter our own echoes via lastSavedToken.
+    if (unsubscribe) unsubscribe()
+    unsubscribe = subscribeToState(userId, (incoming) => {
+      // Echo from our own write — ignore (token roundtripped).
+      if (incoming && incoming.__token && incoming.__token === lastSavedToken) return
+      // Otherwise apply the remote update (came from another device).
+      set({ ...defaultState(), ...migrate(incoming), initialized: true })
+    })
   },
 
-  // ---- generic save helper ----
+  teardown: () => {
+    if (unsubscribe) {
+      unsubscribe()
+      unsubscribe = null
+    }
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    activeUserId = null
+    lastSavedToken = null
+    set({ ...defaultState() })
+  },
+
+  // ---- generic save helper (debounced) ----
   _persist: () => {
-    const snap = persistableSlice(get())
-    saveState(snap)
+    if (!activeUserId) return
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = setTimeout(async () => {
+      saveTimer = null
+      const snap = persistableSlice(get())
+      // Tag the payload with a token so the realtime subscription can
+      // distinguish our own echo from a real remote change.
+      const token = uid()
+      lastSavedToken = token
+      await saveState(activeUserId, { ...snap, __token: token })
+    }, SAVE_DEBOUNCE_MS)
   },
 
   // ---- settings ----
@@ -224,7 +265,6 @@ export const useStore = create((set, get) => ({
     get()._persist()
   },
   toggleLooseEndMirror: (id, mirror) => {
-    // mirror: 'inToday' | 'inMissions' | 'inDeadlines'
     set((s) => ({
       looseEnds: s.looseEnds.map((l) => (l.id === id ? { ...l, [mirror]: !l[mirror] } : l)),
     }))
@@ -233,7 +273,6 @@ export const useStore = create((set, get) => ({
 
   // ---- projects (Active Missions) ----
   addProject: (project) => {
-    // Accept either a `steps` array or a legacy `nextAction` string.
     let stepsInput = project.steps
     if (!Array.isArray(stepsInput) || stepsInput.length === 0) {
       stepsInput = project.nextAction ? [project.nextAction] : []
@@ -403,13 +442,10 @@ export const useStore = create((set, get) => ({
   // ---- todaySchedule (mirror Mission/Deadline/Lab into Today, independent completion) ----
   scheduleToToday: (refType, refId) => {
     const today = todayISO()
-    // Cleared entries are kept as history but are functionally "not on today's list"
-    // — ignore them when checking existence so user can re-add a fresh entry.
     const existing = get().todaySchedule.find(
       (e) => e.refType === refType && e.refId === refId && e.dateKey === today && !e.clearedFromTodayAt
     )
     if (existing) {
-      // tap again to remove from today — but only if not yet completed (completed entries stay as history)
       if (!existing.completed) {
         set((s) => ({ todaySchedule: s.todaySchedule.filter((e) => e.id !== existing.id) }))
         get()._persist()
