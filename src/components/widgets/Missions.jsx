@@ -33,18 +33,18 @@ export default function Missions() {
           No active missions. Tap 🎯 on a Loose End to promote it.
         </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-1.5">
           {active.map((p) => (
             <li
               key={p.id}
               onClick={() => openModal('editMission', { id: p.id })}
-              className="cursor-pointer rounded border border-border hover:border-work/40 p-3 transition"
+              className="cursor-pointer rounded border border-border hover:border-work/40 p-2.5 transition"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-sm text-work font-bold">{p.name}</div>
+                  <div className="text-sm text-work font-bold leading-snug">{p.name}</div>
                   {(p.steps?.[0]?.text || p.nextAction) && (
-                    <div className="text-xs text-text-dim mt-0.5">
+                    <div className="text-[11px] text-text-dim leading-snug mt-0.5">
                       → {p.steps?.[0]?.text || p.nextAction}
                     </div>
                   )}
@@ -58,7 +58,7 @@ export default function Missions() {
                   <TodayPin refType="mission" refId={p.id} />
                 </div>
               </div>
-              <div className="mt-2 h-1 bg-border rounded overflow-hidden">
+              <div className="mt-1.5 h-1 bg-border rounded overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-work to-work/60 transition-all"
                   style={{ width: `${p.progress || 0}%`, boxShadow: '0 0 6px rgba(96,165,250,0.5)' }}

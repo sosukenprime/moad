@@ -42,7 +42,7 @@ export default function Deadlines() {
           Nothing on the calendar.
         </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-1">
           {items.map((d) => {
             const days = daysUntil(d.date)
             const overdue = days < 0
@@ -53,13 +53,13 @@ export default function Deadlines() {
                 key={`${d._kind}:${d.id}`}
                 onClick={isDeadline ? () => openModal('editDeadline', { id: d.id }) : undefined}
                 className={
-                  'group flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-b-0 ' +
+                  'group flex items-center justify-between gap-3 py-1 border-b border-border last:border-b-0 ' +
                   (isDeadline ? 'cursor-pointer hover:bg-coral/5 -mx-2 px-2 rounded' : '')
                 }
               >
                 <div className="min-w-0">
-                  <div className="text-sm text-text">{d.title}</div>
-                  {d.note && <div className="text-xs text-text-muted mt-0.5 whitespace-pre-wrap">{d.note}</div>}
+                  <div className="text-sm text-text leading-snug">{d.title}</div>
+                  {d.note && <div className="text-[11px] text-text-muted leading-snug mt-0.5 line-clamp-2">{d.note}</div>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <div

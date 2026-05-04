@@ -38,10 +38,10 @@ export default function LooseEnds() {
       ) : (
         <ul className="divide-y divide-border">
           {sorted.map((item) => (
-            <li key={item.id} className="group py-2 flex items-center gap-3">
+            <li key={item.id} className="group py-1.5 flex items-center gap-3">
               <HexCheckbox checked={item.completed} tone="personal" onChange={() => toggle(item.id)} />
               <div className="flex-1 min-w-0">
-                <div className="text-sm text-text">{item.text}</div>
+                <div className="text-sm text-text leading-snug">{item.text}</div>
                 <div className="flex items-center gap-2 mt-0.5">
                   {item.dueDate && (
                     <span className="text-[10px] uppercase tracking-wider num text-coral/80">

@@ -28,13 +28,13 @@ export default function Lab() {
       }
     >
       {/* Three pinned slots */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
         {pinned.map((item, i) => (
           <div
             key={i}
             onClick={item ? () => openModal('editLab', { id: item.id }) : undefined}
             className={
-              'rounded border border-creative/30 bg-creative/[0.06] p-2.5 min-h-[96px] flex flex-col justify-between ' +
+              'rounded border border-creative/30 bg-creative/[0.06] p-2 min-h-[80px] flex flex-col justify-between ' +
               (item ? 'cursor-pointer hover:bg-creative/[0.10] hover:border-creative/50 transition' : '')
             }
           >
@@ -72,9 +72,9 @@ export default function Lab() {
                 onClick={() => openModal('editLab', { id: item.id })}
                 className="flex-1 min-w-0 cursor-pointer rounded -mx-1 px-1 py-0.5 hover:bg-creative/[0.08]"
               >
-                <div className="text-sm text-text">{item.text}</div>
+                <div className="text-sm text-text leading-snug">{item.text}</div>
                 {item.note && (
-                  <div className="text-xs text-text-muted truncate">{item.note}</div>
+                  <div className="text-[11px] text-text-muted leading-snug truncate">{item.note}</div>
                 )}
               </div>
               <TodayPin refType="lab" refId={item.id} />
