@@ -166,8 +166,10 @@ export default function ActiveModal() {
     case 'editMission':     return <EditMissionModal id={payload?.id} />
     case 'promoteToMission':return <PromoteToMissionModal id={payload?.id} />
     case 'addDeadline':     return <AddDeadlineModal />
+    case 'editDeadline':    return <EditDeadlineModal id={payload?.id} />
     case 'addHabit':        return <AddHabitModal />
     case 'addLab':          return <AddLabModal />
+    case 'editLab':         return <EditLabModal id={payload?.id} />
     case 'addLooseEnd':     return <AddLooseEndModal />
     case 'settings':        return <SettingsModal />
     case 'help':            return <HelpModal />
@@ -421,7 +423,38 @@ function AddDeadlineModal() {
       <ModalLabel className="mt-3">Date</ModalLabel>
       <DateField value={date} onChange={(e) => setDate(e.target.value)} />
       <ModalLabel className="mt-3">Note</ModalLabel>
-      <ModalInput value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
+      <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="w-full bg-bg-deep/60 border border-border rounded px-3 py-2 text-sm text-text resize-y" placeholder="Optional" />
+    </Modal>
+  )
+}
+
+function EditDeadlineModal({ id }) {
+  const deadline = useStore((s) => s.deadlines.find((d) => d.id === id))
+  const updateDeadline = useStore((s) => s.updateDeadline)
+  const deleteDeadline = useStore((s) => s.deleteDeadline)
+  const closeModal = useUI((u) => u.closeModal)
+  const [title, setTitle] = useState(deadline?.title || '')
+  const [date, setDate] = useState(deadline?.date || '')
+  const [note, setNote] = useState(deadline?.note || '')
+  if (!deadline) return null
+  const onSave = () => {
+    if (!title.trim() || !date) return
+    updateDeadline(id, { title: title.trim(), date, note })
+    closeModal()
+  }
+  return (
+    <Modal title="Edit Deadline" tone="coral" footer={<>
+      <ModalBtn tone="coral" onClick={() => { deleteDeadline(id); closeModal() }}>Delete</ModalBtn>
+      <div className="flex-1" />
+      <ModalBtn tone="ghost" onClick={closeModal}>Cancel</ModalBtn>
+      <ModalBtn tone="coral" onClick={onSave} disabled={!title.trim() || !date}>Save</ModalBtn>
+    </>}>
+      <ModalLabel>Title</ModalLabel>
+      <ModalInput autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
+      <ModalLabel className="mt-3">Date</ModalLabel>
+      <DateField value={date} onChange={(e) => setDate(e.target.value)} />
+      <ModalLabel className="mt-3">Note</ModalLabel>
+      <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="w-full bg-bg-deep/60 border border-border rounded px-3 py-2 text-sm text-text resize-y" placeholder="Optional" />
     </Modal>
   )
 }
@@ -464,7 +497,35 @@ function AddLabModal() {
       <ModalLabel>Idea</ModalLabel>
       <ModalInput autoFocus value={text} onChange={(e) => setText(e.target.value)} placeholder="What are you cooking up?" />
       <ModalLabel className="mt-3">Note (optional)</ModalLabel>
-      <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="w-full bg-bg-deep/60 border border-border rounded px-3 py-2 text-sm text-text resize-y" />
+      <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="w-full bg-bg-deep/60 border border-border rounded px-3 py-2 text-sm text-text resize-y" />
+    </Modal>
+  )
+}
+
+function EditLabModal({ id }) {
+  const item = useStore((s) => s.lab.find((l) => l.id === id))
+  const update = useStore((s) => s.updateLabItem)
+  const del = useStore((s) => s.deleteLabItem)
+  const closeModal = useUI((u) => u.closeModal)
+  const [text, setText] = useState(item?.text || '')
+  const [note, setNote] = useState(item?.note || '')
+  if (!item) return null
+  const onSave = () => {
+    if (!text.trim()) return
+    update(id, { text: text.trim(), note })
+    closeModal()
+  }
+  return (
+    <Modal title="Edit Lab Idea" tone="creative" footer={<>
+      <ModalBtn tone="coral" onClick={() => { del(id); closeModal() }}>Delete</ModalBtn>
+      <div className="flex-1" />
+      <ModalBtn tone="ghost" onClick={closeModal}>Cancel</ModalBtn>
+      <ModalBtn tone="creative" onClick={onSave} disabled={!text.trim()}>Save</ModalBtn>
+    </>}>
+      <ModalLabel>Idea</ModalLabel>
+      <ModalInput autoFocus value={text} onChange={(e) => setText(e.target.value)} />
+      <ModalLabel className="mt-3">Note (optional)</ModalLabel>
+      <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="w-full bg-bg-deep/60 border border-border rounded px-3 py-2 text-sm text-text resize-y" />
     </Modal>
   )
 }

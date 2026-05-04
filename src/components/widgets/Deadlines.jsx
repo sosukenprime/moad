@@ -47,11 +47,19 @@ export default function Deadlines() {
             const days = daysUntil(d.date)
             const overdue = days < 0
             const soon = days >= 0 && days <= 3
+            const isDeadline = d._kind === 'deadline'
             return (
-              <li key={`${d._kind}:${d.id}`} className="group flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-b-0">
+              <li
+                key={`${d._kind}:${d.id}`}
+                onClick={isDeadline ? () => openModal('editDeadline', { id: d.id }) : undefined}
+                className={
+                  'group flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-b-0 ' +
+                  (isDeadline ? 'cursor-pointer hover:bg-coral/5 -mx-2 px-2 rounded' : '')
+                }
+              >
                 <div className="min-w-0">
                   <div className="text-sm text-text">{d.title}</div>
-                  {d.note && <div className="text-xs text-text-muted mt-0.5">{d.note}</div>}
+                  {d.note && <div className="text-xs text-text-muted mt-0.5 whitespace-pre-wrap">{d.note}</div>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <div
@@ -62,10 +70,10 @@ export default function Deadlines() {
                   >
                     {overdue ? `${Math.abs(days)}d over` : days === 0 ? 'Today' : `${days}d`}
                   </div>
-                  {d._kind === 'deadline' && <TodayPin refType="deadline" refId={d.id} />}
-                  {d._kind === 'deadline' && (
+                  {isDeadline && <TodayPin refType="deadline" refId={d.id} />}
+                  {isDeadline && (
                     <button
-                      onClick={() => deleteDeadline(d.id)}
+                      onClick={(e) => { e.stopPropagation(); deleteDeadline(d.id) }}
                       className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-coral text-xs"
                       aria-label="Delete"
                     >

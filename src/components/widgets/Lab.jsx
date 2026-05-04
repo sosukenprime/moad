@@ -32,14 +32,18 @@ export default function Lab() {
         {pinned.map((item, i) => (
           <div
             key={i}
-            className="rounded border border-creative/30 bg-creative/[0.06] p-2.5 min-h-[96px] flex flex-col justify-between"
+            onClick={item ? () => openModal('editLab', { id: item.id }) : undefined}
+            className={
+              'rounded border border-creative/30 bg-creative/[0.06] p-2.5 min-h-[96px] flex flex-col justify-between ' +
+              (item ? 'cursor-pointer hover:bg-creative/[0.10] hover:border-creative/50 transition' : '')
+            }
           >
             {item ? (
               <>
                 <div className="text-xs text-creative font-bold">{item.text}</div>
                 <div className="flex flex-col items-start gap-1.5 mt-2">
                   <button
-                    onClick={() => unpinLabItem(item.id)}
+                    onClick={(e) => { e.stopPropagation(); unpinLabItem(item.id) }}
                     className="text-[10px] uppercase tracking-wider text-creative/70 hover:text-creative"
                   >
                     Unpin
@@ -64,7 +68,10 @@ export default function Lab() {
         <ul className="space-y-1.5">
           {unpinned.map((item) => (
             <li key={item.id} className="group flex items-center gap-2 py-0.5">
-              <div className="flex-1 min-w-0">
+              <div
+                onClick={() => openModal('editLab', { id: item.id })}
+                className="flex-1 min-w-0 cursor-pointer rounded -mx-1 px-1 py-0.5 hover:bg-creative/[0.08]"
+              >
                 <div className="text-sm text-text">{item.text}</div>
                 {item.note && (
                   <div className="text-xs text-text-muted truncate">{item.note}</div>
@@ -72,7 +79,7 @@ export default function Lab() {
               </div>
               <TodayPin refType="lab" refId={item.id} />
               <button
-                onClick={() => pinLabItem(item.id)}
+                onClick={(e) => { e.stopPropagation(); pinLabItem(item.id) }}
                 disabled={pinned.every(Boolean)}
                 className="text-[10px] uppercase tracking-wider text-creative/60 hover:text-creative disabled:opacity-30 disabled:hover:text-creative/60"
                 title={pinned.every(Boolean) ? 'All 3 slots taken' : 'Pin'}
@@ -80,7 +87,7 @@ export default function Lab() {
                 Pin
               </button>
               <button
-                onClick={() => deleteLabItem(item.id)}
+                onClick={(e) => { e.stopPropagation(); deleteLabItem(item.id) }}
                 className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-coral text-xs"
               >
                 ✕
