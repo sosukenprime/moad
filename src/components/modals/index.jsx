@@ -599,6 +599,7 @@ function SettingsModal() {
         lab: useStore.getState().lab,
         looseEnds: useStore.getState().looseEnds,
         deadlines: useStore.getState().deadlines,
+        todaySchedule: useStore.getState().todaySchedule,
         layout: useStore.getState().layout,
       },
     }, null, 2)
