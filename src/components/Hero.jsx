@@ -52,8 +52,8 @@ export default function Hero() {
           className={
             'shrink-0 px-3 py-1.5 rounded text-xs uppercase tracking-wider font-mono border transition ' +
             (focusMode
-              ? 'bg-gold/20 text-gold border-gold/40'
-              : 'bg-surface text-text-dim border-border hover:border-border-strong')
+              ? 'bg-gold/25 text-gold border-gold/60 accent-glow-gold font-bold'
+              : 'bg-gold/[0.07] text-gold/75 border-gold/30 hover:bg-gold/15 hover:text-gold hover:border-gold/50')
           }
           aria-pressed={focusMode}
           title="Focus Mode (F)"
