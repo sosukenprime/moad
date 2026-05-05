@@ -61,7 +61,7 @@ export default function PartnerMode({ preview = false }) {
         {/* Brand pill — mirrors Ken's MOAD COMMAND DECK header */}
         <div className="flex items-center justify-center gap-3 pt-1">
           <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink" />
-          <span className="font-heading text-rose tracking-[0.35em] text-sm leading-none">
+          <span className="font-heading text-rose tracking-[0.35em] text-sm leading-none accent-glow-pink-text">
             {brandLabel}
           </span>
           <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink" />
