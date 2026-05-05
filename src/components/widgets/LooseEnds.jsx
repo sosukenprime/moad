@@ -19,6 +19,7 @@ export default function LooseEnds() {
 
   return (
     <WidgetCard
+      id="looseEnds"
       tone="personal"
       title="Loose Ends"
       badge={open.length > 0 ? `${open.length}` : null}

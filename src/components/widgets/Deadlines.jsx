@@ -25,6 +25,7 @@ export default function Deadlines() {
 
   return (
     <WidgetCard
+      id="deadlines"
       tone="coral"
       title="Deadlines"
       badge={items.length > 0 ? `${items.length}` : null}

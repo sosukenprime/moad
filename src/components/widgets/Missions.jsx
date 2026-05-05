@@ -16,6 +16,7 @@ export default function Missions() {
 
   return (
     <WidgetCard
+      id="projects"
       tone="work"
       title="Active Missions"
       badge={active.length > 0 ? `${active.length}` : null}

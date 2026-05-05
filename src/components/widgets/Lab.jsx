@@ -15,6 +15,7 @@ export default function Lab() {
 
   return (
     <WidgetCard
+      id="lab"
       tone="creative"
       title="The Lab"
       badge={lab.length > 0 ? `${lab.length}` : null}

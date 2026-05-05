@@ -68,6 +68,7 @@ export default function Today() {
 
   return (
     <WidgetCard
+      id="today"
       tone="gold"
       title="Today"
       badge={total ? `${done}/${total} • ${pct}%` : null}

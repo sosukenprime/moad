@@ -13,6 +13,7 @@ export default function DailyProtocol() {
 
   return (
     <WidgetCard
+      id="habits"
       tone="mint"
       title="Daily Protocol"
       badge={userStreak > 0 ? `🔥 ${userStreak}d` : null}

@@ -492,6 +492,12 @@ export const useStore = create((set, get) => ({
     set({ layout: defaultLayout })
     get()._persist()
   },
+  toggleWidgetCollapsed: (id) => {
+    set((s) => ({
+      layout: s.layout.map((l) => (l.id === id ? { ...l, collapsed: !l.collapsed } : l)),
+    }))
+    get()._persist()
+  },
 
   // ---- nuclear ----
   resetAll: () => {

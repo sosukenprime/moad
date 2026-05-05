@@ -90,7 +90,7 @@ export default function Comms() {
   }, [])
 
   return (
-    <WidgetCard tone="silver" title="Comms">
+    <WidgetCard id="comms" tone="silver" title="Comms">
       <div className="space-y-2">
         <textarea
           value={text}
