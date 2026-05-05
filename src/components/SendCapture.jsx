@@ -1,9 +1,9 @@
 // SendCapture — Michelle's primary capture surface in Partner Mode.
-// Type a request → polish via /api/comms (mode=polish) → preview → send.
+// Speak or type a request → polish via /api/comms (mode=polish) → preview → send.
 // Three view states: 'edit' (typing), 'preview' (polished version shown,
 // confirm/edit/cancel), and 'sent' (success → send another / done).
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../lib/store.js'
 
 export default function SendCapture({ recipient, preview = false }) {
@@ -12,6 +12,8 @@ export default function SendCapture({ recipient, preview = false }) {
   const [view, setView] = useState('edit') // edit | preview | sent
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [listening, setListening] = useState(false)
+  const recRef = useRef(null)
   const sendPartnerRequest = useStore((s) => s.sendPartnerRequest)
 
   // recipient: { user_id, partner_name } from partners row where Michelle is listed.
@@ -20,8 +22,13 @@ export default function SendCapture({ recipient, preview = false }) {
   const senderName = recipient?.partner_name || 'me'
   const recipientName = 'them' // partners table doesn't carry recipient's display name
 
-  async function onPolish() {
-    if (!raw.trim() || busy) return
+  const speechSupported =
+    typeof window !== 'undefined' &&
+    (window.SpeechRecognition || window.webkitSpeechRecognition)
+
+  async function polishText(text) {
+    const trimmed = (text || '').trim()
+    if (!trimmed) return
     setBusy(true)
     setError('')
     try {
@@ -30,7 +37,7 @@ export default function SendCapture({ recipient, preview = false }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'polish',
-          message: raw.trim(),
+          message: trimmed,
           senderName,
           recipientName,
         }),
@@ -51,6 +58,49 @@ export default function SendCapture({ recipient, preview = false }) {
       setBusy(false)
     }
   }
+
+  function onPolish() {
+    polishText(raw)
+  }
+
+  function startListening() {
+    if (!speechSupported || busy) return
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    const rec = new SR()
+    rec.continuous = false
+    rec.interimResults = true
+    rec.lang = 'en-US'
+    rec.onresult = (e) => {
+      let s = ''
+      for (const r of e.results) s += r[0].transcript
+      setRaw(s)
+    }
+    rec.onerror = (err) => {
+      console.warn('[send-capture] speech error', err)
+      setListening(false)
+    }
+    rec.onend = () => {
+      setListening(false)
+      // auto-polish if speech captured something — saves a tap
+      setRaw((current) => {
+        if (current.trim()) polishText(current)
+        return current
+      })
+    }
+    recRef.current = rec
+    setListening(true)
+    rec.start()
+  }
+
+  function stopListening() {
+    recRef.current?.stop()
+  }
+
+  useEffect(() => {
+    return () => {
+      try { recRef.current?.stop() } catch {}
+    }
+  }, [])
 
   async function onSend() {
     if (!polished.trim() || busy || !recipient?.user_id) return
@@ -147,19 +197,38 @@ export default function SendCapture({ recipient, preview = false }) {
       <textarea
         value={raw}
         onChange={(e) => setRaw(e.target.value)}
-        placeholder="What do you need?"
+        placeholder={speechSupported ? 'Speak or type…' : 'What do you need?'}
         rows={4}
         autoFocus
         className="w-full bg-bg-deep/60 border border-border focus:border-rose/50 focus:ring-1 focus:ring-rose/40 outline-none rounded px-3 py-3 text-base text-text placeholder:text-text-muted resize-y"
-        disabled={busy}
+        disabled={busy || listening}
       />
-      <button
-        onClick={onPolish}
-        disabled={busy || !raw.trim()}
-        className="w-full text-xs uppercase tracking-wider font-mono rounded px-4 py-3 bg-rose/15 text-rose border border-rose/40 hover:border-rose/70 disabled:opacity-40 transition"
-      >
-        {busy ? 'Polishing…' : 'Polish & Preview →'}
-      </button>
+      <div className="flex items-center gap-2">
+        {speechSupported && (
+          <button
+            type="button"
+            onClick={() => (listening ? stopListening() : startListening())}
+            disabled={busy}
+            aria-label={listening ? 'Stop' : 'Speak'}
+            title={listening ? 'Stop listening' : 'Speak'}
+            className={
+              'shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl transition border ' +
+              (listening
+                ? 'bg-rose/25 text-rose border-rose/70 animate-pulse accent-glow-rose'
+                : 'bg-rose/10 text-rose/80 border-rose/40 hover:bg-rose/20 hover:text-rose hover:border-rose/70')
+            }
+          >
+            {listening ? '●' : '🎤'}
+          </button>
+        )}
+        <button
+          onClick={onPolish}
+          disabled={busy || listening || !raw.trim()}
+          className="flex-1 text-xs uppercase tracking-wider font-mono rounded px-4 py-3 bg-rose/15 text-rose border border-rose/40 hover:border-rose/70 disabled:opacity-40 transition"
+        >
+          {busy ? 'Polishing…' : listening ? 'Listening…' : 'Polish & Preview →'}
+        </button>
+      </div>
       {error && <div className="text-xs text-coral text-center">{error}</div>}
       {!recipient?.user_id && !preview && (
         <div className="text-[11px] text-text-muted text-center pt-1">
