@@ -47,7 +47,7 @@ export default function PartnerMode({ preview = false }) {
     await supabase.auth.signOut()
   }
 
-  const brandLabel = `${(myDisplayName || 'YOUR').toUpperCase()}'S MOAD`
+  const brandLabel = `${(myDisplayName || 'YOUR').toUpperCase()}'S MOAD HOTLINE`
 
   return (
     <div className="min-h-screen pt-[env(safe-area-inset-top)] pb-[max(2rem,env(safe-area-inset-bottom))]">
@@ -59,12 +59,12 @@ export default function PartnerMode({ preview = false }) {
         )}
 
         {/* Brand pill — mirrors Ken's MOAD COMMAND DECK header */}
-        <div className="flex items-center justify-center gap-3 pt-1">
-          <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink" />
-          <span className="font-heading text-rose tracking-[0.35em] text-sm leading-none accent-glow-pink-text">
+        <div className="flex items-center justify-center gap-2.5 pt-1">
+          <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink shrink-0" />
+          <span className="font-heading text-rose tracking-[0.22em] text-xs sm:text-sm leading-none accent-glow-pink-text whitespace-nowrap">
             {brandLabel}
           </span>
-          <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink" />
+          <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink shrink-0" />
         </div>
 
         {/* Personal greeting + sign-out */}
