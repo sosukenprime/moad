@@ -83,6 +83,38 @@
       0 0 8px rgba(244, 114, 182, 0.45),
       0 0 18px rgba(244, 90, 145, 0.3);
   }
+  /* Neon cyan — for Comms-style header design */
+  .accent-glow-neon-cyan {
+    box-shadow:
+      0 0 2px 0 rgba(220, 250, 255, 0.7),
+      0 0 6px 0 rgba(6, 182, 212, 0.6),
+      0 0 14px 0 rgba(6, 182, 212, 0.35);
+  }
+  .accent-glow-neon-cyan-text {
+    text-shadow:
+      0 0 2px rgba(220, 250, 255, 0.5),
+      0 0 8px rgba(6, 182, 212, 0.5),
+      0 0 18px rgba(6, 182, 212, 0.3);
+  }
+  /* Neon purple — for Personal-style header design */
+  .accent-glow-neon-purple {
+    box-shadow:
+      0 0 2px 0 rgba(230, 220, 255, 0.7),
+      0 0 6px 0 rgba(167, 139, 250, 0.6),
+      0 0 14px 0 rgba(167, 139, 250, 0.35);
+  }
+  .accent-glow-neon-purple-text {
+    text-shadow:
+      0 0 2px rgba(230, 220, 255, 0.5),
+      0 0 8px rgba(167, 139, 250, 0.5),
+      0 0 18px rgba(167, 139, 250, 0.3);
+  }
+  /* Slow pulse for live-status dots */
+  @keyframes soft-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .pulse-soft { animation: soft-pulse 2s ease-in-out infinite; }
   .accent-glow-silver {
     box-shadow:
       0 0 4px 0 rgba(255, 255, 255, 1),
