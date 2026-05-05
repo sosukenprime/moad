@@ -33,7 +33,7 @@ export default function SignIn() {
   async function onVerifyCode(e) {
     e.preventDefault()
     const trimmed = code.trim()
-    if (trimmed.length < 6) return
+    if (trimmed.length < 6 || trimmed.length > 10) return
     setStatus('verifying')
     setError('')
     const { error } = await supabase.auth.verifyOtp({
@@ -77,12 +77,12 @@ export default function SignIn() {
           <form onSubmit={onVerifyCode} className="glass rounded-lg p-5 space-y-3">
             <div className="font-heading text-2xl text-gold tracking-wider text-center">Enter Code</div>
             <p className="text-xs text-text-muted text-center">
-              We sent a 6-digit code to{' '}
+              We sent a code to{' '}
               <span className="text-text-dim font-bold break-all">{email}</span>.
               Type it below.
             </p>
             <label className="block text-[11px] uppercase tracking-wider text-text-dim font-mono">
-              6-Digit Code
+              Verification Code
             </label>
             <input
               type="text"
@@ -90,11 +90,11 @@ export default function SignIn() {
               pattern="[0-9]*"
               autoComplete="one-time-code"
               autoFocus
-              maxLength={6}
+              maxLength={10}
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
               placeholder="000000"
-              className="w-full bg-bg-deep/60 border border-border focus:border-gold/50 focus:ring-1 focus:ring-gold/40 outline-none rounded px-3 py-3 text-2xl text-text placeholder:text-text-muted text-center tracking-[0.5em] num"
+              className="w-full bg-bg-deep/60 border border-border focus:border-gold/50 focus:ring-1 focus:ring-gold/40 outline-none rounded px-3 py-3 text-2xl text-text placeholder:text-text-muted text-center tracking-[0.35em] num"
               disabled={status === 'verifying'}
             />
             <button
