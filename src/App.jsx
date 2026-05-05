@@ -10,6 +10,7 @@ import ActiveModal from './components/modals/index.jsx'
 import Toasts from './components/Toasts.jsx'
 import Fab from './components/Fab.jsx'
 import SignIn from './components/SignIn.jsx'
+import PartnerMode from './components/PartnerMode.jsx'
 
 export default function App() {
   const [authLoading, setAuthLoading] = useState(true)
@@ -17,6 +18,7 @@ export default function App() {
   const initialized = useStore((s) => s.initialized)
   const init = useStore((s) => s.init)
   const teardown = useStore((s) => s.teardown)
+  const partnersListingMe = useStore((s) => s.partnersListingMe)
   const layoutEdit = useUI((u) => u.layoutEdit)
   const toggleLayoutEdit = useUI((u) => u.toggleLayoutEdit)
   const openModal = useUI((u) => u.openModal)
@@ -31,13 +33,13 @@ export default function App() {
       if (cancelled) return
       setSession(session)
       setAuthLoading(false)
-      if (session) init(session.user.id)
+      if (session) init(session.user.id, session.user.email || '')
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (cancelled) return
       setSession(newSession)
       setAuthLoading(false)
-      if (newSession) init(newSession.user.id)
+      if (newSession) init(newSession.user.id, newSession.user.email || '')
       else teardown()
     })
     return () => {
@@ -63,6 +65,17 @@ export default function App() {
       <div className="min-h-screen flex items-center justify-center text-text-dim font-mono text-sm">
         Loading your dashboard…
       </div>
+    )
+  }
+
+  // If this user is listed as someone else's partner, show Partner Mode
+  // (a stripped-down send-a-request UI) instead of the full dashboard.
+  if (partnersListingMe.length > 0) {
+    return (
+      <>
+        <PartnerMode />
+        <Toasts />
+      </>
     )
   }
 

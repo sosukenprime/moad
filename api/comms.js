@@ -1,12 +1,16 @@
 // Vercel serverless function — proxies the user's capture text to Anthropic.
 // Server-side only. Reads ANTHROPIC_API_KEY from process.env.
 // In dev, served by a tiny Vite plugin (see vite.config.js).
+//
+// Modes:
+//   default ("capture"): parses input into Loose End items
+//   "polish": rewrites a partner's request as a terse, just-the-facts ask
 
 const MODEL = 'claude-haiku-4-5-20251001'
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
 
-function buildSystemPrompt(today) {
+function buildCaptureSystemPrompt(today) {
   return [
     "You are MOAD's capture assistant. The user will speak or type things they need to remember or do. Parse their input into individual items.",
     "",
@@ -30,6 +34,31 @@ function buildSystemPrompt(today) {
   ].join('\n')
 }
 
+function buildPolishSystemPrompt(senderName, recipientName) {
+  const sender = senderName || 'the sender'
+  const recipient = recipientName || 'the recipient'
+  return [
+    `You are rewriting a casual message from ${sender} into a brief, just-the-facts request directed at ${recipient}.`,
+    "",
+    "Rules:",
+    "- Strip filler words, greetings, and apologies.",
+    "- Keep it terse — todo-style, like a sticky note.",
+    "- Preserve any concrete details (places, times, items).",
+    "- Do NOT add information that wasn't in the input.",
+    "- Output ONE line, under 100 characters when possible.",
+    "",
+    "Examples:",
+    'Input: "hey could u maybe pick up some bread on the way home tonight pleaaaase"',
+    'Output: "Bread on the way home tonight."',
+    "",
+    'Input: "babe pls remind me to call my mom tomorrow"',
+    'Output: "Remind me to call mom tomorrow."',
+    "",
+    'Return strict JSON, no markdown:',
+    '{ "polished": "..." }',
+  ].join('\n')
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.statusCode = 405
@@ -50,14 +79,21 @@ export default async function handler(req, res) {
   if (typeof body === 'string') {
     try { body = JSON.parse(body) } catch { body = {} }
   }
+  const mode = (body && body.mode) === 'polish' ? 'polish' : 'capture'
   const message = (body && body.message ? String(body.message) : '').trim()
   const today = (body && body.today) || new Date().toISOString().slice(0, 10)
+  const senderName = body && body.senderName ? String(body.senderName) : ''
+  const recipientName = body && body.recipientName ? String(body.recipientName) : ''
   if (!message) {
     res.statusCode = 400
     res.setHeader('Content-Type', 'application/json')
     res.end(JSON.stringify({ error: 'message is required' }))
     return
   }
+
+  const systemPrompt = mode === 'polish'
+    ? buildPolishSystemPrompt(senderName, recipientName)
+    : buildCaptureSystemPrompt(today)
 
   try {
     const r = await fetch(ANTHROPIC_URL, {
@@ -69,8 +105,8 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 1024,
-        system: buildSystemPrompt(today),
+        max_tokens: mode === 'polish' ? 256 : 1024,
+        system: systemPrompt,
         messages: [{ role: 'user', content: message }],
       }),
     })
@@ -88,11 +124,22 @@ export default async function handler(req, res) {
     try {
       parsed = JSON.parse(content)
     } catch {
-      // try to extract a JSON object from the text
       const m = content.match(/\{[\s\S]*\}/)
       if (m) {
         try { parsed = JSON.parse(m[0]) } catch {}
       }
+    }
+    if (mode === 'polish') {
+      if (!parsed || typeof parsed.polished !== 'string' || !parsed.polished.trim()) {
+        res.statusCode = 502
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify({ error: 'Could not parse model response', raw: content }))
+        return
+      }
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ polished: parsed.polished.trim() }))
+      return
     }
     if (!parsed || !Array.isArray(parsed.items)) {
       res.statusCode = 502

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { loadState, saveState, subscribeToState } from './storage.js'
 import { todayISO, isYesterday } from './dates.js'
+import * as Partners from './partners.js'
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 
@@ -17,6 +18,8 @@ const defaultLayout = [
 
 const defaultState = () => ({
   initialized: false,
+  // Auth context — populated on init, never persisted to user_state.
+  authEmail: '',
   user: {
     name: '',
     streak: 0,
@@ -37,7 +40,24 @@ const defaultState = () => ({
   // completion (does NOT modify the source). See locked decision #7.
   todaySchedule: [],
   layout: defaultLayout,
+  // Partner pairing + cross-user requests. NOT persisted in user_state — these
+  // come from the partners / partner_requests Supabase tables.
+  myPartners: [],         // people I've added as my partner (Ken's view)
+  partnersListingMe: [],  // people who've added ME as their partner (Michelle's view)
+  incomingRequests: [],   // requests where I'm to_user_id
+  outgoingRequests: [],   // requests where I'm from_user_id
 })
+
+// Fields excluded from persistableSlice (they live in separate tables or
+// runtime-only — never round-trip through user_state.data).
+const NON_PERSISTED_KEYS = new Set([
+  'initialized',
+  'authEmail',
+  'myPartners',
+  'partnersListingMe',
+  'incomingRequests',
+  'outgoingRequests',
+])
 
 // Forward-only migration of loaded state. Bump a version field if needed later;
 // for now, normalize legacy project.nextAction → project.steps[].
@@ -54,12 +74,13 @@ function migrate(data) {
   return data
 }
 
-// Slice exclusion: `initialized` is runtime-only, never persisted.
+// Slice exclusion: NON_PERSISTED_KEYS + functions are stripped before save.
 function persistableSlice(state) {
-  const { initialized: _i, init: _f1, teardown: _f2, _persist: _f3, ...rest } = state
   const out = {}
-  for (const [k, v] of Object.entries(rest)) {
-    if (typeof v !== 'function') out[k] = v
+  for (const [k, v] of Object.entries(state)) {
+    if (typeof v === 'function') continue
+    if (NON_PERSISTED_KEYS.has(k)) continue
+    out[k] = v
   }
   return out
 }
@@ -71,21 +92,22 @@ let activeUserId = null
 let saveTimer = null
 let unsubscribe = null
 let lastSavedToken = null
+let unsubscribePartners = null
 
 const SAVE_DEBOUNCE_MS = 500
 
 export const useStore = create((set, get) => ({
   ...defaultState(),
 
-  init: async (userId) => {
+  init: async (userId, email = '') => {
     activeUserId = userId
     const loaded = await loadState(userId)
     if (loaded) {
-      set({ ...defaultState(), ...migrate(loaded), initialized: true })
+      set({ ...defaultState(), ...migrate(loaded), authEmail: email, initialized: true })
     } else {
       // First sign-in for this user — start with defaults; first action
       // will trigger an upsert.
-      set({ ...defaultState(), initialized: true })
+      set({ ...defaultState(), authEmail: email, initialized: true })
     }
 
     // Subscribe to remote changes. Filter our own echoes via lastSavedToken.
@@ -94,7 +116,19 @@ export const useStore = create((set, get) => ({
       // Echo from our own write — ignore (token roundtripped).
       if (incoming && incoming.__token && incoming.__token === lastSavedToken) return
       // Otherwise apply the remote update (came from another device).
-      set({ ...defaultState(), ...migrate(incoming), initialized: true })
+      set((s) => ({ ...defaultState(), ...migrate(incoming), authEmail: s.authEmail, myPartners: s.myPartners, partnersListingMe: s.partnersListingMe, incomingRequests: s.incomingRequests, outgoingRequests: s.outgoingRequests, initialized: true }))
+    })
+
+    // Load partner data + subscribe to live request changes.
+    await get().loadPartnerData()
+    if (unsubscribePartners) unsubscribePartners()
+    unsubscribePartners = Partners.subscribeToPartnerRequests(userId, async () => {
+      // Cheap: just refetch both lists on any change. Volume is tiny.
+      const [incoming, outgoing] = await Promise.all([
+        Partners.loadIncomingRequests(userId),
+        Partners.loadOutgoingRequests(userId),
+      ])
+      set({ incomingRequests: incoming, outgoingRequests: outgoing })
     })
   },
 
@@ -102,6 +136,10 @@ export const useStore = create((set, get) => ({
     if (unsubscribe) {
       unsubscribe()
       unsubscribe = null
+    }
+    if (unsubscribePartners) {
+      unsubscribePartners()
+      unsubscribePartners = null
     }
     if (saveTimer) {
       clearTimeout(saveTimer)
@@ -497,6 +535,61 @@ export const useStore = create((set, get) => ({
       layout: s.layout.map((l) => (l.id === id ? { ...l, collapsed: !l.collapsed } : l)),
     }))
     get()._persist()
+  },
+
+  // ---- partners + cross-user requests ----
+  loadPartnerData: async () => {
+    if (!activeUserId) return
+    const email = get().authEmail
+    const [myPartners, partnersListingMe, incoming, outgoing] = await Promise.all([
+      Partners.loadMyPartners(activeUserId),
+      email ? Partners.loadPartnersListingMe(email) : Promise.resolve([]),
+      Partners.loadIncomingRequests(activeUserId),
+      Partners.loadOutgoingRequests(activeUserId),
+    ])
+    set({
+      myPartners,
+      partnersListingMe,
+      incomingRequests: incoming,
+      outgoingRequests: outgoing,
+    })
+  },
+  addPartner: async ({ email, name }) => {
+    if (!activeUserId) throw new Error('not signed in')
+    const row = await Partners.addPartner(activeUserId, { email, name })
+    set((s) => ({ myPartners: [...s.myPartners, row] }))
+    return row
+  },
+  removePartner: async (id) => {
+    await Partners.removePartner(id)
+    set((s) => ({ myPartners: s.myPartners.filter((p) => p.id !== id) }))
+  },
+  sendPartnerRequest: async ({ toUserId, raw, polished }) => {
+    if (!activeUserId) throw new Error('not signed in')
+    const row = await Partners.sendRequest({ fromUserId: activeUserId, toUserId, raw, polished })
+    set((s) => ({ outgoingRequests: [row, ...s.outgoingRequests] }))
+    return row
+  },
+  markPartnerRequestDone: async (id) => {
+    const row = await Partners.markRequestDone(id)
+    set((s) => ({
+      incomingRequests: s.incomingRequests.map((r) => (r.id === id ? row : r)),
+      outgoingRequests: s.outgoingRequests.map((r) => (r.id === id ? row : r)),
+    }))
+  },
+  markPartnerRequestPending: async (id) => {
+    const row = await Partners.markRequestPending(id)
+    set((s) => ({
+      incomingRequests: s.incomingRequests.map((r) => (r.id === id ? row : r)),
+      outgoingRequests: s.outgoingRequests.map((r) => (r.id === id ? row : r)),
+    }))
+  },
+  deletePartnerRequest: async (id) => {
+    await Partners.deleteRequest(id)
+    set((s) => ({
+      outgoingRequests: s.outgoingRequests.filter((r) => r.id !== id),
+      incomingRequests: s.incomingRequests.filter((r) => r.id !== id),
+    }))
   },
 
   // ---- nuclear ----

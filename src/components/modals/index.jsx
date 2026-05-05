@@ -572,16 +572,48 @@ function SettingsModal() {
   const toggleHaptic = useStore((s) => s.toggleHaptic)
   const resetLayout = useStore((s) => s.resetLayout)
   const resetAll = useStore((s) => s.resetAll)
+  const myPartners = useStore((s) => s.myPartners)
+  const addPartner = useStore((s) => s.addPartner)
+  const removePartner = useStore((s) => s.removePartner)
   const closeModal = useUI((u) => u.closeModal)
   const toast = useUI((u) => u.toast)
   const [name, setNameLocal] = useState(user.name)
   const [signedInEmail, setSignedInEmail] = useState('')
+  const [partnerEmail, setPartnerEmail] = useState('')
+  const [partnerName, setPartnerName] = useState('')
+  const [savingPartner, setSavingPartner] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setSignedInEmail(data?.user?.email || '')
     })
   }, [])
+
+  const onAddPartner = async () => {
+    const email = partnerEmail.trim()
+    if (!email) return
+    setSavingPartner(true)
+    try {
+      await addPartner({ email, name: partnerName.trim() })
+      toast(`Added ${partnerName.trim() || email}`, 'success')
+      setPartnerEmail('')
+      setPartnerName('')
+    } catch (err) {
+      toast(`Could not add partner: ${err.message || err}`, 'error')
+    } finally {
+      setSavingPartner(false)
+    }
+  }
+
+  const onRemovePartner = async (id, label) => {
+    if (!confirm(`Remove ${label} as a partner? They won't be able to send you new requests.`)) return
+    try {
+      await removePartner(id)
+      toast('Partner removed', 'info')
+    } catch (err) {
+      toast(`Could not remove: ${err.message || err}`, 'error')
+    }
+  }
 
   const signOut = async () => {
     await supabase.auth.signOut()
@@ -659,6 +691,54 @@ function SettingsModal() {
         </label>
         <ModalBtn tone="ghost" onClick={() => { resetLayout(); toast('Layout reset', 'info') }}>Reset Layout</ModalBtn>
         <ModalBtn tone="coral" onClick={() => { if (confirm('Wipe everything? This cannot be undone.')) { resetAll(); toast('All data reset', 'info') } }}>Reset All</ModalBtn>
+      </div>
+
+      {/* Partners — people allowed to send you requests via The Ask */}
+      <div className="mt-5 pt-4 border-t border-border">
+        <ModalLabel>Partners</ModalLabel>
+        <p className="text-[11px] text-text-muted mb-2">
+          Add someone's email and they can sign in on their own device to send you requests via The Ask. They never see your dashboard.
+        </p>
+        {myPartners.length > 0 && (
+          <ul className="space-y-1 mb-3">
+            {myPartners.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-2 text-sm bg-bg-deep/40 rounded px-3 py-2 border border-border">
+                <div className="min-w-0">
+                  <div className="text-text truncate">{p.partner_name || p.partner_email}</div>
+                  {p.partner_name && <div className="text-[11px] text-text-muted truncate">{p.partner_email}</div>}
+                </div>
+                <button
+                  onClick={() => onRemovePartner(p.id, p.partner_name || p.partner_email)}
+                  className="shrink-0 text-[10px] uppercase tracking-wider font-mono text-text-muted hover:text-coral border border-border hover:border-coral/40 rounded px-2 py-1"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          <ModalInput
+            value={partnerName}
+            onChange={(e) => setPartnerName(e.target.value)}
+            placeholder="Name (optional)"
+            disabled={savingPartner}
+          />
+          <ModalInput
+            value={partnerEmail}
+            onChange={(e) => setPartnerEmail(e.target.value)}
+            placeholder="email@example.com"
+            type="email"
+            disabled={savingPartner}
+          />
+        </div>
+        <ModalBtn
+          tone="rose"
+          onClick={onAddPartner}
+          disabled={savingPartner || !partnerEmail.trim()}
+        >
+          {savingPartner ? 'Adding…' : 'Add Partner'}
+        </ModalBtn>
       </div>
       {signedInEmail && (
         <div className="mt-5 pt-4 border-t border-border">

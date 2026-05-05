@@ -69,6 +69,7 @@ export function ModalBtn({ tone = 'gold', children, ...rest }) {
     mint:  'border-mint/50 text-mint hover:bg-mint/10',
     creative: 'border-creative/50 text-creative hover:bg-creative/10',
     personal: 'border-personal/50 text-personal hover:bg-personal/10',
+    rose:  'border-rose/50 text-rose hover:bg-rose/10',
     ghost: 'border-border text-text-dim hover:bg-surface',
   }[tone] || 'border-gold/50 text-gold hover:bg-gold/10'
   return (
