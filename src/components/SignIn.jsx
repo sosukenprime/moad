@@ -57,7 +57,7 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-3 mb-8 justify-center">
           <div className="w-1.5 h-5 bg-gold rounded-sm accent-glow-gold" />

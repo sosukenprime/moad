@@ -67,7 +67,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pt-[env(safe-area-inset-top)] pb-[max(6rem,env(safe-area-inset-bottom))]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6">
         <Hero />
         <div className="flex items-center justify-end gap-2 mt-3">
