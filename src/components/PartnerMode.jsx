@@ -47,26 +47,34 @@ export default function PartnerMode({ preview = false }) {
     await supabase.auth.signOut()
   }
 
+  const brandLabel = `${(myDisplayName || 'YOUR').toUpperCase()}'S MOAD`
+
   return (
     <div className="min-h-screen pt-[env(safe-area-inset-top)] pb-[max(2rem,env(safe-area-inset-bottom))]">
-      <div className="max-w-md mx-auto px-4 sm:px-6 pt-6 space-y-5">
+      <div className="max-w-md mx-auto px-4 sm:px-6 pt-4 space-y-5">
         {preview && (
           <div className="rounded border border-gold/40 bg-gold/[0.08] text-gold text-[11px] uppercase tracking-wider font-mono px-3 py-2 text-center">
             Preview mode · sends are faked · ?preview=partner
           </div>
         )}
 
-        {/* Personal header — feels like Hero, but for Michelle */}
+        {/* Brand pill — mirrors Ken's MOAD COMMAND DECK header */}
+        <div className="flex items-center justify-center gap-3 pt-1">
+          <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink" />
+          <span className="font-heading text-rose tracking-[0.35em] text-sm leading-none">
+            {brandLabel}
+          </span>
+          <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink" />
+        </div>
+
+        {/* Personal greeting + sign-out */}
         <header className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-1.5 h-6 bg-rose rounded-sm accent-glow-rose shrink-0" />
-            <div className="min-w-0">
-              <div className="font-heading text-3xl text-rose tracking-wider leading-none truncate">
-                Hi {myDisplayName}
-              </div>
-              <div className="text-[11px] text-text-muted font-mono uppercase tracking-wider mt-1">
-                Send a request
-              </div>
+          <div className="min-w-0">
+            <div className="font-heading text-3xl text-rose tracking-wider leading-none truncate accent-glow-pink-text">
+              Hi {myDisplayName}
+            </div>
+            <div className="text-[11px] text-text-muted font-mono uppercase tracking-wider mt-1">
+              Send a request
             </div>
           </div>
           <button
