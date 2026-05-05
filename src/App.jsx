@@ -48,6 +48,21 @@ export default function App() {
     }
   }, [init, teardown])
 
+  // ?preview=partner forces Partner Mode rendering with sample data so
+  // Ken can review Michelle's screen design without needing her account.
+  // Bypasses auth so the preview link works anywhere (local dev included).
+  const previewPartner =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('preview') === 'partner'
+  if (previewPartner) {
+    return (
+      <>
+        <PartnerMode preview />
+        <Toasts />
+      </>
+    )
+  }
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-text-dim font-mono text-sm">

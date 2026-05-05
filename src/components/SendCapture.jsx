@@ -6,20 +6,19 @@
 import { useState } from 'react'
 import { useStore } from '../lib/store.js'
 
-export default function SendCapture({ recipient }) {
+export default function SendCapture({ recipient, preview = false }) {
   const [raw, setRaw] = useState('')
   const [polished, setPolished] = useState('')
   const [view, setView] = useState('edit') // edit | preview | sent
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const sendPartnerRequest = useStore((s) => s.sendPartnerRequest)
-  const myEmail = useStore((s) => s.authEmail)
 
   // recipient: { user_id, partner_name } from partners row where Michelle is listed.
   // partner_name is the name Ken set ("Michelle"). We use it in the polish prompt
   // to ground the assistant on who's writing.
   const senderName = recipient?.partner_name || 'me'
-  const recipientName = recipient?.recipient_name || 'them'
+  const recipientName = 'them' // partners table doesn't carry recipient's display name
 
   async function onPolish() {
     if (!raw.trim() || busy) return
@@ -58,6 +57,13 @@ export default function SendCapture({ recipient }) {
     setBusy(true)
     setError('')
     try {
+      if (preview) {
+        // Preview mode: fake the send so Ken can see the success state without
+        // writing to the real partner_requests table.
+        await new Promise((resolve) => setTimeout(resolve, 400))
+        setView('sent')
+        return
+      }
       await sendPartnerRequest({
         toUserId: recipient.user_id,
         raw: raw.trim(),
@@ -107,7 +113,7 @@ export default function SendCapture({ recipient }) {
     return (
       <div className="glass rounded-lg p-6 space-y-4">
         <div className="text-[11px] uppercase tracking-wider text-text-dim font-mono text-center">
-          Preview — sending to {recipientName}
+          Preview before sending
         </div>
         <div className="rounded border border-rose/30 bg-rose/5 px-4 py-4 text-base text-text">
           {polished}
@@ -136,7 +142,7 @@ export default function SendCapture({ recipient }) {
   return (
     <div className="glass rounded-lg p-6 space-y-3">
       <div className="text-[11px] uppercase tracking-wider text-text-dim font-mono">
-        New request for {recipientName}
+        New request
       </div>
       <textarea
         value={raw}
@@ -155,9 +161,9 @@ export default function SendCapture({ recipient }) {
         {busy ? 'Polishing…' : 'Polish & Preview →'}
       </button>
       {error && <div className="text-xs text-coral text-center">{error}</div>}
-      {!recipient?.user_id && (
+      {!recipient?.user_id && !preview && (
         <div className="text-[11px] text-text-muted text-center pt-1">
-          You're not paired with anyone yet. Ask {recipientName} to add your email under their Settings → Partner.
+          You're not paired with anyone yet. Ask them to add your email under Settings → Partner.
         </div>
       )}
     </div>

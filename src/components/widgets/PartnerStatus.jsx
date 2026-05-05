@@ -13,9 +13,10 @@ function fmt(iso) {
   return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
-export default function PartnerStatus() {
-  const outgoing = useStore((s) => s.outgoingRequests)
+export default function PartnerStatus({ preview = false, previewItems = [] }) {
+  const realOutgoing = useStore((s) => s.outgoingRequests)
   const deletePartnerRequest = useStore((s) => s.deletePartnerRequest)
+  const outgoing = preview && realOutgoing.length === 0 ? previewItems : realOutgoing
 
   const { pending, done } = useMemo(() => {
     const pending = outgoing.filter((r) => r.status === 'pending')
@@ -38,7 +39,7 @@ export default function PartnerStatus() {
               label="Pending"
               tone="rose"
               items={pending}
-              onDelete={(id) => {
+              onDelete={preview ? null : (id) => {
                 if (confirm('Delete this pending request?')) deletePartnerRequest(id)
               }}
             />
@@ -57,6 +58,7 @@ function Section({ label, tone, items, onDelete }) {
     tone === 'rose'
       ? 'text-[10px] uppercase tracking-wider font-mono text-rose'
       : 'text-[10px] uppercase tracking-wider font-mono text-text-muted'
+  const dim = tone !== 'rose'
   return (
     <div>
       <div className={labelClass + ' mb-1.5'}>{label}</div>
@@ -64,10 +66,15 @@ function Section({ label, tone, items, onDelete }) {
         {items.map((r) => (
           <li
             key={r.id}
-            className="group flex items-start justify-between gap-3 py-1.5 border-b border-border last:border-b-0"
+            className={
+              'group flex items-start justify-between gap-3 py-1.5 border-b border-border last:border-b-0 ' +
+              (dim ? 'opacity-70' : '')
+            }
           >
             <div className="min-w-0 flex-1">
-              <div className="text-sm text-text leading-snug">{r.polished}</div>
+              <div className={'text-sm leading-snug ' + (dim ? 'text-text-dim line-through decoration-text-muted' : 'text-text')}>
+                {r.polished}
+              </div>
               <div className="text-[11px] text-text-muted leading-snug mt-0.5">
                 {r.status === 'done' && r.completed_at
                   ? `done · ${fmt(r.completed_at)}`

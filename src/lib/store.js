@@ -14,6 +14,9 @@ const defaultLayout = [
   { id: 'lab', size: 'half' },
   { id: 'looseEnds', size: 'full' },
   { id: 'theAsk', size: 'full' },
+  // Not rendered on Ken's dashboard (LayoutGrid has no mapping); lives in
+  // Michelle's PartnerMode. Stored here so its collapse state persists.
+  { id: 'partnerStatus', size: 'full', collapsed: true },
 ]
 
 const defaultState = () => ({
