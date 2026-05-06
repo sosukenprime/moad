@@ -1,17 +1,16 @@
 // Michelle's view. When the signed-in user is listed as someone's partner,
-// they land here instead of the dashboard. Focused, single-purpose: a
-// header that feels personal, a SendCapture block, and a collapsible
-// PartnerStatus widget below.
+// they land here instead of the dashboard.
 //
 // `preview` mode: rendered when ?preview=partner is on the URL and the
 // signed-in user is NOT actually a partner. Used by Ken to review the
 // design without needing Michelle's account. Polish API still runs;
 // Send is faked; sample rows seed the Status widget.
 //
-// `?design=1|2|3` — preview-only header design switcher. Default 1.
-//   1 = Hotline (rose/pink, current)
-//   2 = Console (cyan/silver, ops/comms console feel)
-//   3 = Counterpart (purple, mirrors Ken's gold COMMAND DECK pattern)
+// `?design=1|2|3` — preview-only design switcher between three full-page
+// design philosophies (not just color swaps):
+//   1 = Sunset   — editorial / postcard (gradient hero, italic serif)
+//   2 = Pulse    — voice-first minimal (huge centered mic)
+//   3 = Threads  — chat-style (iMessage-feel composer + bubble status)
 
 import { supabase } from '../lib/supabase.js'
 import { useStore } from '../lib/store.js'
@@ -65,36 +64,89 @@ export default function PartnerMode({ preview = false }) {
     window.location.assign(url.toString())
   }
 
+  const switcher = preview ? (
+    <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 rounded-full border border-gold/40 bg-bg-deep/85 backdrop-blur px-2 py-1 flex gap-1 items-center shadow-lg">
+      <span className="text-[10px] uppercase tracking-wider font-mono text-gold/80 px-1">design</span>
+      {[1, 2, 3].map((n) => (
+        <button
+          key={n}
+          onClick={() => setDesign(n)}
+          className={
+            'w-6 h-6 rounded-full text-[11px] font-mono border transition ' +
+            (n === design
+              ? 'bg-gold/30 text-gold border-gold/70'
+              : 'bg-surface text-text-dim border-border hover:border-gold/40')
+          }
+        >
+          {n}
+        </button>
+      ))}
+    </div>
+  ) : null
+
+  if (design === 2) {
+    return (
+      <>
+        {switcher}
+        <DesignPulse name={myDisplayName} recipient={recipient} preview={preview} onExit={signOut} />
+      </>
+    )
+  }
+  if (design === 3) {
+    return (
+      <>
+        {switcher}
+        <DesignThreads name={myDisplayName} recipient={recipient} preview={preview} onExit={signOut} />
+      </>
+    )
+  }
+  return (
+    <>
+      {switcher}
+      <DesignSunset name={myDisplayName} recipient={recipient} preview={preview} onExit={signOut} />
+    </>
+  )
+}
+
+// ============================================================================
+// Design 1 — Sunset. Editorial postcard. Gradient hero block, italic serif
+// greeting, paper-card capture surface. Warm, romantic, less "ops."
+// ============================================================================
+function DesignSunset({ name, recipient, preview, onExit }) {
   return (
     <div className="min-h-screen pt-[env(safe-area-inset-top)] pb-[max(2rem,env(safe-area-inset-bottom))]">
-      <div className="max-w-md mx-auto px-4 sm:px-6 pt-4 space-y-5">
-        {preview && (
-          <div className="rounded border border-gold/40 bg-gold/[0.08] text-gold text-[11px] uppercase tracking-wider font-mono px-3 py-2 text-center">
-            Preview mode · sends are faked · design {design} of 3
-            <div className="flex justify-center gap-2 mt-2">
-              {[1, 2, 3].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setDesign(n)}
-                  className={
-                    'w-7 h-7 rounded text-[11px] font-mono border transition ' +
-                    (n === design
-                      ? 'bg-gold/25 text-gold border-gold/70'
-                      : 'bg-surface text-text-dim border-border hover:border-gold/40')
-                  }
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
+      <div className="max-w-md mx-auto px-4 sm:px-6 pt-12 space-y-5">
+        {/* Gradient hero — sunset stripes */}
+        <div className="relative rounded-xl overflow-hidden h-28">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(244, 90, 145, 0.85) 0%, rgba(255, 138, 101, 0.7) 50%, rgba(245, 185, 66, 0.55) 100%)',
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg-deep/60 to-transparent" />
+          <div className="absolute top-3 left-4 text-[10px] uppercase tracking-[0.3em] font-mono text-white/80">
+            moad · hotline
           </div>
-        )}
+          <div className="absolute top-3 right-3">
+            <button
+              onClick={onExit}
+              className="text-[10px] uppercase tracking-wider font-mono text-white/85 hover:text-white border border-white/30 hover:border-white/60 rounded px-2 py-1 backdrop-blur-sm bg-bg-deep/30"
+              title={preview ? 'Exit preview' : 'Sign out'}
+            >
+              {preview ? 'Exit' : 'Sign Out'}
+            </button>
+          </div>
+          <div className="absolute bottom-3 left-4 text-3xl text-white" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+            for ken,
+          </div>
+        </div>
 
-        {design === 1 && <HeaderHotline name={myDisplayName} preview={preview} onExit={signOut} />}
-        {design === 2 && <HeaderConsole name={myDisplayName} preview={preview} onExit={signOut} />}
-        {design === 3 && <HeaderCounterpart name={myDisplayName} preview={preview} onExit={signOut} />}
-
-        <SendCapture recipient={recipient} preview={preview} />
+        {/* Capture wrapped in a paper-card style */}
+        <div className="rounded-xl border border-rose/25 bg-rose/[0.04] p-1">
+          <SendCapture recipient={recipient} preview={preview} />
+        </div>
 
         <PartnerStatus preview={preview} previewItems={PREVIEW_SAMPLE_REQUESTS} />
       </div>
@@ -103,103 +155,135 @@ export default function PartnerMode({ preview = false }) {
 }
 
 // ============================================================================
-// Design 1 — Hotline (rose/pink). Original. Brand pill + big greeting.
+// Design 2 — Pulse. Voice-first minimal. The capture surface gets a wide
+// breathing rose halo behind it; surrounded by negative space. Status is
+// pushed to the very bottom and de-emphasized.
 // ============================================================================
-function HeaderHotline({ name, preview, onExit }) {
-  const brandLabel = `${(name || 'YOUR').toUpperCase()}'S MOAD HOTLINE`
+function DesignPulse({ name, recipient, preview, onExit }) {
   return (
-    <>
-      <div className="flex items-center justify-center gap-2.5 pt-1">
-        <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink shrink-0" />
-        <span className="font-heading text-rose tracking-[0.22em] text-xs sm:text-sm leading-none whitespace-nowrap">
-          {brandLabel}
-        </span>
-        <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink shrink-0" />
+    <div className="min-h-screen pt-[env(safe-area-inset-top)] pb-[max(2rem,env(safe-area-inset-bottom))] flex flex-col">
+      <div className="flex items-center justify-between px-5 pt-12 text-[10px] uppercase tracking-[0.3em] font-mono">
+        <span className="text-text-muted">moad</span>
+        <button
+          onClick={onExit}
+          className="text-text-muted hover:text-text-dim border border-border hover:border-border-strong rounded px-2 py-1"
+          title={preview ? 'Exit preview' : 'Sign out'}
+        >
+          {preview ? 'Exit' : 'Sign Out'}
+        </button>
       </div>
-      <header className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="font-heading text-3xl text-rose tracking-wider leading-none truncate">
-            Hi {name}
-          </div>
-          <div className="text-[11px] text-text-muted font-mono uppercase tracking-wider mt-1">
-            Send a request
+
+      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8 max-w-md mx-auto w-full">
+        <div className="text-center space-y-2">
+          <div className="text-text-dim text-xs uppercase tracking-[0.4em] font-mono">tell ken</div>
+          <div className="font-heading text-4xl text-rose tracking-wider leading-none">What's up?</div>
+        </div>
+        {/* Capture sits inside a wide breathing halo */}
+        <div className="relative w-full">
+          <div
+            className="absolute inset-0 -m-4 rounded-3xl pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse at center, rgba(244, 90, 145, 0.18) 0%, transparent 60%)',
+              filter: 'blur(8px)',
+            }}
+            aria-hidden
+          />
+          <div className="relative">
+            <SendCapture recipient={recipient} preview={preview} />
           </div>
         </div>
-        <ExitButton preview={preview} onClick={onExit} />
-      </header>
-    </>
+      </div>
+
+      <div className="px-4 pb-2 max-w-md mx-auto w-full opacity-80">
+        <PartnerStatus preview={preview} previewItems={PREVIEW_SAMPLE_REQUESTS} />
+      </div>
+    </div>
   )
 }
 
 // ============================================================================
-// Design 2 — Console (cyan/silver). Ops/comms console feel. Status indicator
-// dot pulses; greeting reads like a terminal session. No "Hi Michelle" — uses
-// "CALLING KEN" framing as the dominant element.
+// Design 3 — Threads. Chat-style. iMessage-feel composer with the recipient
+// pinned at the top. Status renders as bubble thread (sent: rose right;
+// done: dim gray with checkmark, left).
 // ============================================================================
-function HeaderConsole({ name, preview, onExit }) {
+function DesignThreads({ name, recipient, preview, onExit }) {
   return (
-    <>
-      <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.2em] font-mono pt-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="w-2 h-2 rounded-full bg-mint accent-glow-mint pulse-soft shrink-0" />
-          <span className="text-mint">Hotline · Active</span>
+    <div className="min-h-screen pt-[env(safe-area-inset-top)] pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <div className="max-w-md mx-auto px-4 sm:px-6 pt-2 space-y-4">
+        {/* Threads header — minimal routing bar */}
+        <header className="flex items-center justify-between gap-3 py-2 border-b border-border">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-rose/20 border border-rose/40 flex items-center justify-center text-rose font-heading text-base">
+              {(name || '?')[0].toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-wider font-mono text-text-muted leading-tight">to</div>
+              <div className="text-sm text-text font-bold leading-tight">Ken</div>
+            </div>
+          </div>
+          <button
+            onClick={onExit}
+            className="shrink-0 text-[10px] uppercase tracking-wider font-mono text-text-muted hover:text-text-dim border border-border hover:border-border-strong rounded px-2 py-1"
+            title={preview ? 'Exit preview' : 'Sign out'}
+          >
+            {preview ? 'Exit' : 'Sign Out'}
+          </button>
+        </header>
+
+        {/* Bubble-thread status */}
+        <ThreadsBubbles preview={preview} />
+
+        {/* Composer at the bottom — feels like a chat input */}
+        <div className="rounded-2xl border border-rose/30 bg-bg-deep/50 p-1">
+          <SendCapture recipient={recipient} preview={preview} />
         </div>
-        <span className="text-text-muted shrink-0">{(name || 'guest').toUpperCase()} ↗</span>
       </div>
-      <header className="flex items-end justify-between gap-3 pt-1">
-        <div className="min-w-0">
-          <div className="font-heading text-4xl text-cyan tracking-wider leading-none truncate">
-            Direct Line
-          </div>
-          <div className="text-[11px] text-text-muted font-mono uppercase tracking-[0.2em] mt-2">
-            <span className="text-cyan/80">Open</span>
-            <span className="text-text-muted/60"> · channel secure</span>
-          </div>
-        </div>
-        <ExitButton preview={preview} onClick={onExit} />
-      </header>
-    </>
+    </div>
   )
 }
 
-// ============================================================================
-// Design 3 — Counterpart (purple). Mirrors Ken's gold COMMAND DECK header
-// almost exactly, just in personal-purple instead. Most "branded" of the
-// three; reads as a parallel deck, not a guest interface.
-// ============================================================================
-function HeaderCounterpart({ name, preview, onExit }) {
-  const brandLabel = `${(name || 'YOUR').toUpperCase()}'S COMMAND`
-  return (
-    <>
-      <div className="flex items-center justify-center gap-3 pt-1">
-        <div className="w-1.5 h-5 bg-personal rounded-sm accent-glow-neon-purple shrink-0" />
-        <span className="font-heading text-personal tracking-[0.35em] text-sm leading-none whitespace-nowrap">
-          {brandLabel}
-        </span>
+function ThreadsBubbles({ preview }) {
+  const real = useStore((s) => s.outgoingRequests)
+  const items = preview && real.length === 0 ? PREVIEW_SAMPLE_REQUESTS : real
+  if (items.length === 0) {
+    return (
+      <div className="text-center text-text-muted text-xs py-6">
+        Nothing sent yet. Type or speak below to send Ken your first ask.
       </div>
-      <header className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="font-heading text-3xl text-personal tracking-wider leading-none truncate">
-            Hi {name}
+    )
+  }
+  return (
+    <div className="space-y-2 py-2">
+      {items.slice().reverse().map((r) => {
+        const isPending = r.status === 'pending'
+        return (
+          <div key={r.id} className={'flex ' + (isPending ? 'justify-end' : 'justify-start')}>
+            <div
+              className={
+                'max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-snug ' +
+                (isPending
+                  ? 'bg-rose/20 text-text rounded-br-sm border border-rose/30'
+                  : 'bg-surface text-text-dim rounded-bl-sm border border-border')
+              }
+            >
+              <div className={isPending ? '' : 'line-through decoration-text-muted/60'}>{r.polished}</div>
+              <div className={'text-[10px] mt-1 num ' + (isPending ? 'text-rose/70 text-right' : 'text-text-muted')}>
+                {fmt(isPending ? r.created_at : r.completed_at)}
+                {!isPending && ' · ✓'}
+              </div>
+            </div>
           </div>
-          <div className="text-[11px] text-text-muted font-mono uppercase tracking-wider mt-1">
-            File a request
-          </div>
-        </div>
-        <ExitButton preview={preview} onClick={onExit} />
-      </header>
-    </>
+        )
+      })}
+    </div>
   )
 }
 
-function ExitButton({ preview, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="shrink-0 text-[10px] uppercase tracking-wider font-mono text-text-muted hover:text-text-dim border border-border hover:border-border-strong rounded px-2 py-1"
-      title={preview ? 'Exit preview' : 'Sign out'}
-    >
-      {preview ? 'Exit' : 'Sign Out'}
-    </button>
-  )
+function fmt(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const now = new Date()
+  const sameDay = d.toDateString() === now.toDateString()
+  if (sameDay) return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
