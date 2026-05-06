@@ -38,24 +38,24 @@ function buildPolishSystemPrompt(senderName, recipientName) {
   const sender = senderName || 'the sender'
   const recipient = recipientName || 'the recipient'
   return [
-    `You are rewriting a casual message from ${sender} into a brief, just-the-facts request directed at ${recipient}.`,
+    `You are rewriting a casual message from ${sender} into brief, just-the-facts requests directed at ${recipient}.`,
     "",
     "Rules:",
-    "- Strip filler words, greetings, and apologies.",
-    "- Keep it terse — todo-style, like a sticky note.",
-    "- Preserve any concrete details (places, times, items).",
+    "- If the input contains multiple distinct requests, split them into separate items.",
+    "- If only one request, return an array with one item.",
+    "- Each item: terse, todo-style, like a sticky note. Strip filler, greetings, apologies.",
+    "- Preserve concrete details (places, times, items, names).",
     "- Do NOT add information that wasn't in the input.",
-    "- Output ONE line, under 100 characters when possible.",
+    "- Each item one line, under 100 characters when possible.",
     "",
     "Examples:",
     'Input: "hey could u maybe pick up some bread on the way home tonight pleaaaase"',
-    'Output: "Bread on the way home tonight."',
+    'Output: { "items": ["Bread on the way home tonight."] }',
     "",
-    'Input: "babe pls remind me to call my mom tomorrow"',
-    'Output: "Remind me to call mom tomorrow."',
+    'Input: "babe grab milk and also remind me to call my mom tomorrow oh and the trash needs to go out tonight"',
+    'Output: { "items": ["Grab milk.", "Remind me to call mom tomorrow.", "Take trash out tonight."] }',
     "",
-    'Return strict JSON, no markdown:',
-    '{ "polished": "..." }',
+    'Return strict JSON, no markdown: { "items": ["...", "..."] }',
   ].join('\n')
 }
 
@@ -130,7 +130,18 @@ export default async function handler(req, res) {
       }
     }
     if (mode === 'polish') {
-      if (!parsed || typeof parsed.polished !== 'string' || !parsed.polished.trim()) {
+      // Accept either {items: [...]} (current) or {polished: "..."} (legacy
+      // single-string shape we used to return — kept for graceful fallback).
+      let items = []
+      if (parsed && Array.isArray(parsed.items)) {
+        items = parsed.items
+          .map((it) => (typeof it === 'string' ? it : it && typeof it.polished === 'string' ? it.polished : ''))
+          .map((s) => s.trim())
+          .filter(Boolean)
+      } else if (parsed && typeof parsed.polished === 'string' && parsed.polished.trim()) {
+        items = [parsed.polished.trim()]
+      }
+      if (items.length === 0) {
         res.statusCode = 502
         res.setHeader('Content-Type', 'application/json')
         res.end(JSON.stringify({ error: 'Could not parse model response', raw: content }))
@@ -138,7 +149,7 @@ export default async function handler(req, res) {
       }
       res.statusCode = 200
       res.setHeader('Content-Type', 'application/json')
-      res.end(JSON.stringify({ polished: parsed.polished.trim() }))
+      res.end(JSON.stringify({ items }))
       return
     }
     if (!parsed || !Array.isArray(parsed.items)) {

@@ -8,7 +8,7 @@ import { useStore } from '../lib/store.js'
 
 export default function SendCapture({ recipient, preview = false }) {
   const [raw, setRaw] = useState('')
-  const [polished, setPolished] = useState('')
+  const [items, setItems] = useState([]) // parsed polished items
   const [view, setView] = useState('edit') // edit | preview | sent
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -47,9 +47,12 @@ export default function SendCapture({ recipient, preview = false }) {
         throw new Error(txt || `HTTP ${res.status}`)
       }
       const data = await res.json()
-      const out = (data?.polished || '').trim()
-      if (!out) throw new Error('empty polish response')
-      setPolished(out)
+      // Accept new {items:[...]} shape or legacy {polished:"..."}.
+      let parsed = []
+      if (Array.isArray(data?.items)) parsed = data.items.filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim())
+      else if (typeof data?.polished === 'string' && data.polished.trim()) parsed = [data.polished.trim()]
+      if (parsed.length === 0) throw new Error('empty polish response')
+      setItems(parsed)
       setView('preview')
     } catch (err) {
       console.error('[send-capture] polish failed', err)
@@ -103,7 +106,7 @@ export default function SendCapture({ recipient, preview = false }) {
   }, [])
 
   async function onSend() {
-    if (!polished.trim() || busy || !recipient?.user_id) return
+    if (items.length === 0 || busy || !recipient?.user_id) return
     setBusy(true)
     setError('')
     try {
@@ -114,11 +117,14 @@ export default function SendCapture({ recipient, preview = false }) {
         setView('sent')
         return
       }
-      await sendPartnerRequest({
-        toUserId: recipient.user_id,
-        raw: raw.trim(),
-        polished: polished.trim(),
-      })
+      // Send each item as its own row. Sequential to keep ordering stable.
+      for (const polished of items) {
+        await sendPartnerRequest({
+          toUserId: recipient.user_id,
+          raw: raw.trim(),
+          polished,
+        })
+      }
       setView('sent')
     } catch (err) {
       console.error('[send-capture] send failed', err)
@@ -128,6 +134,14 @@ export default function SendCapture({ recipient, preview = false }) {
     }
   }
 
+  function removeItem(index) {
+    setItems((arr) => arr.filter((_, i) => i !== index))
+  }
+
+  function updateItem(index, value) {
+    setItems((arr) => arr.map((s, i) => (i === index ? value : s)))
+  }
+
   function backToEdit() {
     setView('edit')
     setError('')
@@ -135,18 +149,26 @@ export default function SendCapture({ recipient, preview = false }) {
 
   function reset() {
     setRaw('')
-    setPolished('')
+    setItems([])
     setView('edit')
     setError('')
   }
 
   if (view === 'sent') {
+    const count = items.length
     return (
-      <div className="glass rounded-lg p-6 space-y-5 text-center">
+      <div className="glass rounded-lg p-6 space-y-4 text-center">
         <div className="font-heading text-3xl text-rose tracking-wider">Sent ✓</div>
-        <div className="rounded border border-rose/30 bg-rose/5 px-4 py-3 text-sm text-text">
-          {polished}
+        <div className="text-xs text-text-muted">
+          {count === 1 ? '1 request sent' : `${count} requests sent`}
         </div>
+        <ul className="space-y-1.5 text-left">
+          {items.map((s, i) => (
+            <li key={i} className="rounded border border-rose/30 bg-rose/5 px-3 py-2 text-sm text-text">
+              {s}
+            </li>
+          ))}
+        </ul>
         <div className="flex gap-2 pt-1">
           <button
             onClick={reset}
@@ -160,28 +182,47 @@ export default function SendCapture({ recipient, preview = false }) {
   }
 
   if (view === 'preview') {
+    const count = items.length
     return (
-      <div className="glass rounded-lg p-6 space-y-4">
+      <div className="glass rounded-lg p-6 space-y-3">
         <div className="text-[11px] uppercase tracking-wider text-text-dim font-mono text-center">
-          Preview before sending
+          {count === 1 ? 'Preview before sending' : `Heard ${count} requests — review before sending`}
         </div>
-        <div className="rounded border border-rose/30 bg-rose/5 px-4 py-4 text-base text-text">
-          {polished}
-        </div>
-        <div className="flex gap-2">
+        <ul className="space-y-1.5">
+          {items.map((s, i) => (
+            <li key={i} className="group flex items-start gap-2 rounded border border-rose/30 bg-rose/5 px-3 py-2">
+              <input
+                value={s}
+                onChange={(e) => updateItem(i, e.target.value)}
+                className="flex-1 min-w-0 bg-transparent outline-none text-sm text-text"
+              />
+              {count > 1 && (
+                <button
+                  onClick={() => removeItem(i)}
+                  className="shrink-0 text-text-muted hover:text-coral text-xs px-1"
+                  aria-label="Remove"
+                  title="Remove"
+                >
+                  ✕
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+        <div className="flex gap-2 pt-1">
           <button
             onClick={backToEdit}
             disabled={busy}
             className="flex-1 text-xs uppercase tracking-wider font-mono rounded px-3 py-2 bg-surface text-text-dim border border-border hover:border-border-strong transition"
           >
-            Edit
+            Back
           </button>
           <button
             onClick={onSend}
-            disabled={busy}
+            disabled={busy || items.length === 0}
             className="flex-[2] text-xs uppercase tracking-wider font-mono rounded px-4 py-2 bg-rose/20 text-rose border border-rose/50 hover:border-rose/80 disabled:opacity-50 transition"
           >
-            {busy ? 'Sending…' : 'Send →'}
+            {busy ? 'Sending…' : count === 1 ? 'Send →' : `Send ${count} →`}
           </button>
         </div>
         {error && <div className="text-xs text-coral text-center">{error}</div>}
