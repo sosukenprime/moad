@@ -111,14 +111,14 @@ function HeaderHotline({ name, preview, onExit }) {
     <>
       <div className="flex items-center justify-center gap-2.5 pt-1">
         <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink shrink-0" />
-        <span className="font-heading text-rose tracking-[0.22em] text-xs sm:text-sm leading-none accent-glow-pink-text whitespace-nowrap">
+        <span className="font-heading text-rose tracking-[0.22em] text-xs sm:text-sm leading-none whitespace-nowrap">
           {brandLabel}
         </span>
         <div className="w-1.5 h-5 bg-rose rounded-sm accent-glow-pink shrink-0" />
       </div>
       <header className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="font-heading text-3xl text-rose tracking-wider leading-none truncate accent-glow-pink-text">
+          <div className="font-heading text-3xl text-rose tracking-wider leading-none truncate">
             Hi {name}
           </div>
           <div className="text-[11px] text-text-muted font-mono uppercase tracking-wider mt-1">
@@ -148,7 +148,7 @@ function HeaderConsole({ name, preview, onExit }) {
       </div>
       <header className="flex items-end justify-between gap-3 pt-1">
         <div className="min-w-0">
-          <div className="font-heading text-4xl text-cyan tracking-wider leading-none truncate accent-glow-neon-cyan-text">
+          <div className="font-heading text-4xl text-cyan tracking-wider leading-none truncate">
             Direct Line
           </div>
           <div className="text-[11px] text-text-muted font-mono uppercase tracking-[0.2em] mt-2">
@@ -173,13 +173,13 @@ function HeaderCounterpart({ name, preview, onExit }) {
     <>
       <div className="flex items-center justify-center gap-3 pt-1">
         <div className="w-1.5 h-5 bg-personal rounded-sm accent-glow-neon-purple shrink-0" />
-        <span className="font-heading text-personal tracking-[0.35em] text-sm leading-none accent-glow-neon-purple-text whitespace-nowrap">
+        <span className="font-heading text-personal tracking-[0.35em] text-sm leading-none whitespace-nowrap">
           {brandLabel}
         </span>
       </div>
       <header className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="font-heading text-3xl text-personal tracking-wider leading-none truncate accent-glow-neon-purple-text">
+          <div className="font-heading text-3xl text-personal tracking-wider leading-none truncate">
             Hi {name}
           </div>
           <div className="text-[11px] text-text-muted font-mono uppercase tracking-wider mt-1">
