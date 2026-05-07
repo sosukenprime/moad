@@ -52,13 +52,17 @@ export default function Deadlines() {
             return (
               <li
                 key={`${d._kind}:${d.id}`}
-                onClick={isDeadline ? () => openModal('editDeadline', { id: d.id }) : undefined}
-                className={
-                  'group flex items-center justify-between gap-3 py-1 border-b border-border last:border-b-0 ' +
-                  (isDeadline ? 'cursor-pointer hover:bg-coral/5 -mx-2 px-2 rounded' : '')
-                }
+                className="group flex items-center justify-between gap-3 py-1 border-b border-border last:border-b-0"
               >
-                <div className="min-w-0">
+                {/* Click-to-edit zone — only the title/note, NOT the action column,
+                    so tapping TodayPin or delete doesn't also open the edit modal. */}
+                <div
+                  onClick={isDeadline ? () => openModal('editDeadline', { id: d.id }) : undefined}
+                  className={
+                    'min-w-0 flex-1 ' +
+                    (isDeadline ? 'cursor-pointer rounded -mx-1 px-1 py-0.5 hover:bg-coral/5' : '')
+                  }
+                >
                   <div className="text-sm text-text leading-snug">{d.title}</div>
                   {d.note && <div className="text-[11px] text-text-muted leading-snug mt-0.5 line-clamp-2">{d.note}</div>}
                 </div>
@@ -74,7 +78,7 @@ export default function Deadlines() {
                   {isDeadline && <TodayPin refType="deadline" refId={d.id} />}
                   {isDeadline && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); deleteDeadline(d.id) }}
+                      onClick={() => deleteDeadline(d.id)}
                       className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-coral text-xs"
                       aria-label="Delete"
                     >
