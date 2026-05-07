@@ -138,12 +138,12 @@ function DesignSunset({ name, recipient, preview, onExit }) {
               {preview ? 'Exit' : 'Sign Out'}
             </button>
           </div>
-          <div className="absolute bottom-3 left-4">
-            <div className="text-[10px] uppercase tracking-[0.3em] font-mono text-white/75 mb-1">
+          <div className="absolute bottom-3 left-4 right-4">
+            <div className="text-xs uppercase tracking-[0.3em] font-mono text-white/85 mb-1.5">
               tell ken
             </div>
             <div className="font-heading text-4xl text-white tracking-wider leading-none">
-              What's up?
+              What You Want
             </div>
           </div>
         </div>
