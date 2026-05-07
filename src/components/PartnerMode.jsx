@@ -117,7 +117,7 @@ function DesignSunset({ name, recipient, preview, onExit }) {
     <div className="min-h-screen pt-[env(safe-area-inset-top)] pb-[max(2rem,env(safe-area-inset-bottom))]">
       <div className="max-w-md mx-auto px-4 sm:px-6 pt-12 space-y-5">
         {/* Gradient hero — sunset stripes */}
-        <div className="relative rounded-xl overflow-hidden h-28">
+        <div className="relative rounded-xl overflow-hidden h-32">
           <div
             className="absolute inset-0"
             style={{
@@ -138,8 +138,13 @@ function DesignSunset({ name, recipient, preview, onExit }) {
               {preview ? 'Exit' : 'Sign Out'}
             </button>
           </div>
-          <div className="absolute bottom-3 left-4 text-3xl text-white" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
-            for ken,
+          <div className="absolute bottom-3 left-4">
+            <div className="text-[10px] uppercase tracking-[0.3em] font-mono text-white/75 mb-1">
+              tell ken
+            </div>
+            <div className="font-heading text-4xl text-white tracking-wider leading-none">
+              What's up?
+            </div>
           </div>
         </div>
 
