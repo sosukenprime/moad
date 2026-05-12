@@ -32,14 +32,26 @@ export default function WidgetCard({ id, tone = 'gold', title, badge, action, ch
       {/* left accent stripe with glow */}
       <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${t.stripe} ${t.glow}`} />
 
-      {/* header with subtle accent wash */}
+      {/* header with subtle accent wash. Whole header is a click target for
+          toggling collapse when collapsible — except the action zone on the
+          right, which stops propagation so + Add buttons still act normally. */}
       <div className={`relative bg-gradient-to-r ${t.wash} to-transparent`}>
-        <div className={'flex items-center justify-between gap-3 px-4 sm:px-5 py-3 ' + (collapsed ? '' : 'border-b border-border')}>
+        <div
+          onClick={collapsible ? () => toggleCollapsed(id) : undefined}
+          className={
+            'flex items-center justify-between gap-3 px-4 sm:px-5 py-3 ' +
+            (collapsed ? '' : 'border-b border-border ') +
+            (collapsible ? 'cursor-pointer select-none' : '')
+          }
+        >
           <div className="flex items-center gap-3 min-w-0">
             <h2 className={`font-heading text-2xl tracking-wider ${t.text}`}>{title}</h2>
             {badge != null && <span className="text-xs num text-text-muted">{badge}</span>}
           </div>
-          <div className="shrink-0 flex items-center gap-2">
+          <div
+            className="shrink-0 flex items-center gap-2 cursor-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             {action != null && action}
             {collapsible && (
               <button
