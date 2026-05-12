@@ -48,24 +48,14 @@ export default function WidgetCard({ id, tone = 'gold', title, badge, action, ch
             <h2 className={`font-heading text-2xl tracking-wider ${t.text}`}>{title}</h2>
             {badge != null && <span className="text-xs num text-text-muted">{badge}</span>}
           </div>
-          <div
-            className="shrink-0 flex items-center gap-2 cursor-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {action != null && action}
-            {collapsible && (
-              <button
-                onClick={() => toggleCollapsed(id)}
-                aria-label={collapsed ? 'Expand' : 'Collapse'}
-                title={collapsed ? 'Expand' : 'Collapse'}
-                className={`w-7 h-7 rounded border border-border text-text-muted hover:text-text hover:border-border-strong flex items-center justify-center text-sm transition ${collapsed ? '' : 'rotate-180'}`}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-            )}
-          </div>
+          {action != null && (
+            <div
+              className="shrink-0 flex items-center gap-2 cursor-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {action}
+            </div>
+          )}
         </div>
       </div>
 
